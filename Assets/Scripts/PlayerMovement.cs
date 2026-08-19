@@ -1,125 +1,101 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
+using System.Collections;
+using System.Collections.Generic;
 
-public class SimpleMovement : MonoBehaviour
+[RequireComponent(typeof(Rigidbody2D))]
+
+public class PlayerMovement : MonoBehaviour
 {
-    [Header("Movement")]
-    public float moveSpeed = 8f;
-    public float jumpForce = 12f;
-
-    [Header("Ground Check")]
-    public Transform groundCheck;
-    public LayerMask groundLayer;
-    public float groundCheckRadius = 0.2f;
-
-    [Header("Shooting")]
-    public GameObject bulletPrefab;
-    public Transform firePoint;
-    public float bulletSpeed = 20f;
 
     [Header("Dash")]
     public float dashSpeed = 20f;
     public float dashDuration = 0.2f;
     public float dashCooldown = 1f;
+    bool canDash = true;
+    bool isDashing;
 
-    private Rigidbody2D rb;
-    private SpriteRenderer spriteRenderer;
-    private float horizontalInput;
-    private bool isGrounded;
+    [Header("Movement")]
+    [SerializeField] float speed = 6f;
+    [SerializeField] InputActionReference moveActionReference;
+    Rigidbody2D rb;
+    Vector2 moveInput;
+    Transform playerTransform;
+    Vector2 dir;
 
-    private bool canDash = true;
-    private bool isDashing;
-    private float originalGravity;
-    private float facingDirection = 1f; // 1 for right, -1 for left
+    [Header("Shooting")]
+    [SerializeField] GameObject bullet;
+    [SerializeField] float timeBetweenFiring;
+    [SerializeField] Transform spawnPoint;
+    float timer;
 
-    void Start()
-    {
+    void Awake(){
+        // Get Rigidbody2D component
         rb = GetComponent<Rigidbody2D>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        originalGravity = rb.gravityScale;
+    }
+    
+    void Start(){
+        playerTransform = this.transform;
+        timer = timeBetweenFiring;
+        canDash = true;
+        isDashing = false;
     }
 
-    void Update()
-    {
+    void Update(){
         if (isDashing) return;
-
-        // Ground check using your GroundCheck transform
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-
-        // Get left/right input
-        horizontalInput = Input.GetAxis("Horizontal");
-
-        // Track facing direction and flip sprite + firepoint
-        if (horizontalInput != 0)
-        {
-            facingDirection = Mathf.Sign(horizontalInput);
-
-            if (spriteRenderer != null)
-            {
-                spriteRenderer.flipX = (facingDirection < 0);
-            }
-
-            if (firePoint != null)
-            {
-                Vector3 firePointPos = firePoint.localPosition;
-                firePointPos.x = Mathf.Abs(firePointPos.x) * facingDirection;
-                firePoint.localPosition = firePointPos;
-            }
+        dir = (Camera.main.ScreenToWorldPoint(Mouse.current.position.value) - playerTransform.position).normalized;
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        playerTransform.rotation = Quaternion.AngleAxis(angle - 90, Vector3.forward);
+        timer-=Time.deltaTime;
+        if (Mouse.current.leftButton.isPressed && timer<=0){
+            OnClick();
+            timer = timeBetweenFiring;
         }
-
-        // Jump when Spacebar is pressed and player is grounded
-        if (Input.GetButtonDown("Jump") && isGrounded)
-        {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-        }
-
-        // Shoot when Left Mouse Button is clicked
-        if (Input.GetButtonDown("Fire1"))
-        {
-            Shoot();
-        }
-
-        // Dash when Left Shift is pressed
-        if (Input.GetKeyDown(KeyCode.LeftShift) && canDash)
-        {
+        if (Keyboard.current.spaceKey.wasPressedThisFrame && canDash){
             StartCoroutine(Dash());
         }
     }
 
-    void FixedUpdate()
-    {
+    void FixedUpdate(){
         if (isDashing) return;
-
-        // Move the player left/right
-        rb.linearVelocity = new Vector2(horizontalInput * moveSpeed, rb.linearVelocity.y);
+        //Using Rigidbody2D to change player's position
+        rb.MovePosition(rb.position + moveInput.normalized * speed * Time.fixedDeltaTime);
     }
 
-    void Shoot()
-    {
-        if (bulletPrefab != null && firePoint != null)
-        {
-            GameObject bullet = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
-            Rigidbody2D bulletRb = bullet.GetComponent<Rigidbody2D>();
-
-            if (bulletRb != null)
-            {
-                bulletRb.linearVelocity = new Vector2(facingDirection * bulletSpeed, 0f);
-            }
-        }
+    void OnEnable(){
+        //Enabling Input System
+        moveActionReference.action.Enable();
+        moveActionReference.action.performed += OnMovePerformed;
+        moveActionReference.action.canceled += OnMoveCanceled;
     }
 
-    private System.Collections.IEnumerator Dash()
-    {
+    void OnDisable(){
+        // Disabling Input System
+        moveActionReference.action.performed -= OnMovePerformed;
+        moveActionReference.action.canceled -= OnMoveCanceled;
+        moveActionReference.action.Disable();
+    }
+
+    void OnMovePerformed(InputAction.CallbackContext ctx){
+        // Get Vector2 input
+        moveInput = ctx.ReadValue<Vector2>();
+    }
+
+    void OnMoveCanceled(InputAction.CallbackContext ctx){
+        // No movement when no button is pressed
+        moveInput = Vector2.zero;
+    }
+
+    void OnClick(){
+        Instantiate(bullet, spawnPoint.position, transform.rotation);
+    }
+
+    private IEnumerator Dash(){
         canDash = false;
         isDashing = true;
-
-        rb.gravityScale = 0f;
-        rb.linearVelocity = new Vector2(facingDirection * dashSpeed, 0f);
-
+        rb.linearVelocity = transform.up * dashSpeed;
         yield return new WaitForSeconds(dashDuration);
-
-        rb.gravityScale = originalGravity;
         isDashing = false;
-
         yield return new WaitForSeconds(dashCooldown);
         canDash = true;
     }
