@@ -13,7 +13,7 @@ public class PlayerMovement : MonoBehaviour
     public float dashDuration = 0.2f;
     public float dashCooldown = 1f;
     bool canDash = true;
-    bool isDashing;
+    bool isDashing = false;
 
     [Header("Movement")]
     [SerializeField] float speed = 6f;
@@ -29,6 +29,11 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] Transform spawnPoint;
     float timer;
 
+    [Header("Health")]
+    int maxHealth = 100;
+    int currentHealth;
+    [SerializeField] HealthBar healthBar;
+
     void Awake(){
         // Get Rigidbody2D component
         rb = GetComponent<Rigidbody2D>();
@@ -37,8 +42,8 @@ public class PlayerMovement : MonoBehaviour
     void Start(){
         playerTransform = this.transform;
         timer = timeBetweenFiring;
-        canDash = true;
-        isDashing = false;
+        currentHealth = maxHealth;
+        healthBar.SetMaxHealth(maxHealth);
     }
 
     void Update(){
@@ -53,6 +58,9 @@ public class PlayerMovement : MonoBehaviour
         }
         if (Keyboard.current.spaceKey.wasPressedThisFrame && canDash){
             StartCoroutine(Dash());
+        }
+        if (Keyboard.current.pKey.wasPressedThisFrame){
+            TakeDamage(20);
         }
     }
 
@@ -98,5 +106,10 @@ public class PlayerMovement : MonoBehaviour
         isDashing = false;
         yield return new WaitForSeconds(dashCooldown);
         canDash = true;
+    }
+
+    void TakeDamage(int damage){
+        currentHealth -= damage;
+        healthBar.SetHealth(currentHealth);
     }
 }
