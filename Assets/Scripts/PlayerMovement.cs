@@ -47,7 +47,7 @@ public class PlayerMovement : MonoBehaviour
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
         playerTransform.rotation = Quaternion.AngleAxis(angle - 90, Vector3.forward);
         timer-=Time.deltaTime;
-        if (Mouse.current.leftButton.isPressed && timer<=0){
+        if (Mouse.current.leftButton.isPressed && timer<=0 && !isDashing){
             OnClick();
             timer = timeBetweenFiring;
         }
