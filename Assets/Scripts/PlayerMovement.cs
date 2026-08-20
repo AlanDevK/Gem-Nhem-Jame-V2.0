@@ -34,6 +34,12 @@ public class PlayerMovement : MonoBehaviour
     int currentHealth;
     [SerializeField] HealthBar healthBar;
 
+    [Header("Interaction")]
+    [SerializeField] GameObject interactionButton;
+    bool holdInteractable = false;
+    [SerializeField] InteractionSlider interactionSlider;
+    bool interactable = false;
+
     void Awake(){
         // Get Rigidbody2D component
         rb = GetComponent<Rigidbody2D>();
@@ -44,6 +50,8 @@ public class PlayerMovement : MonoBehaviour
         timer = timeBetweenFiring;
         currentHealth = maxHealth;
         healthBar.SetMaxHealth(maxHealth);
+        interactionButton.SetActive(false);
+        interactionSlider.gameObject.SetActive(false);
     }
 
     void Update(){
@@ -61,6 +69,29 @@ public class PlayerMovement : MonoBehaviour
         }
         if (Keyboard.current.pKey.wasPressedThisFrame){
             TakeDamage(20);
+        }
+        if (Keyboard.current.fKey.isPressed && holdInteractable && interactionSlider.timer<=interactionSlider.waitTimer){
+            interactionSlider.gameObject.SetActive(true);
+            interactionSlider.timer += Time.deltaTime;
+            interactionSlider.SetSliderValue();
+            if (interactionSlider.timer >= interactionSlider.waitTimer){
+                interactionSlider.timer = interactionSlider.waitTimer;
+                interactionSlider.gameObject.SetActive(false);
+                interactionButton.SetActive(false);
+                Debug.Log("Breaching Complete!");
+                holdInteractable = false;
+            }
+        }
+        else if (interactionSlider.timer>0 && holdInteractable){
+            interactionSlider.timer -= Time.deltaTime;
+            interactionSlider.SetSliderValue();
+            if (interactionSlider.timer <= 0){
+                interactionSlider.timer = 0;
+                interactionSlider.gameObject.SetActive(false);
+            }
+        }
+        if (Keyboard.current.fKey.wasPressedThisFrame && interactable){
+            Debug.Log("Interacted!");
         }
     }
 
@@ -111,5 +142,33 @@ public class PlayerMovement : MonoBehaviour
     void TakeDamage(int damage){
         currentHealth -= damage;
         healthBar.SetHealth(currentHealth);
+    }
+
+    void OnTriggerEnter2D (Collider2D other){
+        if (other.CompareTag("DataCenter") && interactionSlider.timer < interactionSlider.waitTimer){
+            interactionButton.SetActive(true);
+            holdInteractable = true;
+        }
+        if (other.CompareTag("Interactives")){
+            interactionButton.SetActive(true);
+            interactable = true;
+        }
+    }
+
+    void OnTriggerExit2D (Collider2D other){
+        if (other.CompareTag("DataCenter")){
+            if (interactionButton != null){
+                interactionButton.SetActive(false);
+            }
+            holdInteractable = false;
+            if (interactionSlider.timer < interactionSlider.waitTimer){
+                interactionSlider.timer = 0;
+            }
+            interactionSlider.gameObject.SetActive(false);
+        }
+        if (other.CompareTag("Interactives")){
+            interactionButton.SetActive(false);
+            interactable = false;
+        }
     }
 }
