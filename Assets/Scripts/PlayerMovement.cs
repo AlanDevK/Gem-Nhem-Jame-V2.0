@@ -9,14 +9,14 @@ public class PlayerMovement : MonoBehaviour
 {
 
     [Header("Dash")]
-    public float dashSpeed = 20f;
+    public float dashSpeed = 30f;
     public float dashDuration = 0.2f;
     public float dashCooldown = 1f;
     bool canDash = true;
     bool isDashing = false;
 
     [Header("Movement")]
-    [SerializeField] float speed = 6f;
+    [SerializeField] float speed = 15f;
     [SerializeField] InputActionReference moveActionReference;
     Rigidbody2D rb;
     Vector2 moveInput;
