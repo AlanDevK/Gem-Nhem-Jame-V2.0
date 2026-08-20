@@ -18,5 +18,15 @@ public class BulletMovement : MonoBehaviour
         if (other.CompareTag("Walls")){
             Destroy(gameObject);
         }
+        if (other.CompareTag("Borders")){
+            Destroy(gameObject);
+        }
+        if (gameObject.CompareTag("Bullets") && other.CompareTag("Enemies")){
+            Destroy(gameObject);
+        }
+        if (other.CompareTag("EnemyBullets")){
+            Destroy(gameObject);
+            Destroy(other);
+        }
     }
 }

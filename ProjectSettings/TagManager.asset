@@ -8,6 +8,10 @@ TagManager:
   - Walls
   - DataCenter
   - Interactives
+  - Bullets
+  - Borders
+  - EnemyBullets
+  - Enemies
   layers:
   - Default
   - TransparentFX
