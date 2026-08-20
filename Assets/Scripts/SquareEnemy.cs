@@ -3,76 +3,89 @@ using UnityEngine.AI;
 using System.Collections;
 using System.Collections.Generic;
 
+[RequireComponent(typeof(NavMeshAgent))]
 public class SquareEnemy : MonoBehaviour
 {
+    [Header("References")]
     [SerializeField] Transform player;
-    [SerializeField] float spareDistance = 2f;
     [SerializeField] GameObject bullet;
-    [SerializeField] Transform spawnPointA;
-    [SerializeField] Transform spawnPointB;
-    [SerializeField] Transform spawnPointC;
-    [SerializeField] Transform spawnPointD;
+    [SerializeField] Transform[] spawnPoints;
+
+    [Header ("Combat Stats")]
+    [SerializeField] float spareDistance = 2f;
     [SerializeField] float rotationSpeed;
-    float delaySeconds = 1f;
-    float timer;
-    bool canFire = false;
     [SerializeField] float health = 300f;
     [SerializeField] float timeBetweenFiring = 0.5f;
+    float delaySeconds = 1f;
 
     NavMeshAgent agent;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        timer = 0;
+    Camera mainCam;
+    float fireTimer;
+    float delayTimer;
+    bool isPreparingToFire = false;
+
+    void Awake(){
         agent = GetComponent<NavMeshAgent>();
         agent.updateRotation = false;
         agent.updateUpAxis = false;
+        mainCam = Camera.main;
     }
 
     // Update is called once per frame
     void Update()
     {
-        timer -= Time.deltaTime;
-        if (Vector2.Distance(transform.position, player.position) > spareDistance && !canFire){
-            StopCoroutine(Firing());
-            agent.isStopped = false;
-            agent.SetDestination(player.position);
+        if (player == null) return;
+        Vector3 viewPos = mainCam.WorldToViewportPoint(transform.position);
+        bool isVisibleOnCamera = viewPos.x >= 0 && viewPos.x <= 1 && viewPos.y >=0 && viewPos.y <=1;
+
+        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
+        if (isVisibleOnCamera && distanceToPlayer <= spareDistance){
+            EngagePlayer();
         }
         else{
-            canFire = true;
-            agent.isStopped = true;
-            StartCoroutine(Firing());
+            ChasePlayer();
         }
     }
 
-    IEnumerator Firing(){
-        yield return new WaitForSeconds(delaySeconds);
-        transform.Rotate(0,0,rotationSpeed);
-        if (timer<=0){
-            Instantiate(bullet, spawnPointA.position, spawnPointA.rotation);
-            Instantiate(bullet, spawnPointB.position, spawnPointB.rotation);
-            Instantiate(bullet, spawnPointC.position, spawnPointC.rotation);
-            Instantiate(bullet, spawnPointD.position, spawnPointD.rotation);
-            timer = timeBetweenFiring;
+    void EngagePlayer(){
+        agent.isStopped = true;
+        agent.velocity = Vector3.zero;
+        if (!isPreparingToFire){
+            isPreparingToFire = true;
+            delayTimer = delaySeconds;
         }
+        if (delayTimer > 0){
+            delayTimer -= Time.deltaTime;
+            return;
+        }
+        transform.Rotate(0,0, rotationSpeed);
+        fireTimer -= Time.deltaTime;
+        if (fireTimer <= 0){
+            foreach (Transform sp in spawnPoints){
+                Instantiate(bullet, sp.position, sp.rotation);
+            }
+            fireTimer = timeBetweenFiring;
+        }
+    }
+
+    void ChasePlayer(){
+        agent.isStopped = false;
+        agent.SetDestination(player.position);
+        transform.rotation = Quaternion.identity;
+        isPreparingToFire = false;
+        fireTimer = 0;
     }
 
     void OnTriggerEnter2D (Collider2D other){
-        if (other.CompareTag("Borders")){
-            StartCoroutine(Waiting());
-            canFire = false;
-            StopCoroutine(Firing());
-            transform.rotation = Quaternion.Euler(0,0,0);
-        }
-        if (other.CompareTag("Bullets")){
-            health-=10;
-            if (health <= 0){
-                gameObject.SetActive(false);
-            }
+        if (other.gameObject.CompareTag("Bullets")){
+            TakeDamage(10);
         }
     }
 
-    IEnumerator Waiting(){
-        yield return new WaitForSeconds(delaySeconds);
+    public void TakeDamage(float amount){
+        health -= amount;
+        if (health <= 0){
+            gameObject.SetActive(false);
+        }
     }
 }

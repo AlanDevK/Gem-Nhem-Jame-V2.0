@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: -3355123773008463017}
   - component: {fileID: -7955647308219223269}
   - component: {fileID: 3559131468314010237}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Slow Bullet
   m_TagString: EnemyBullets
   m_Icon: {fileID: 0}
@@ -164,7 +164,7 @@ CircleCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0

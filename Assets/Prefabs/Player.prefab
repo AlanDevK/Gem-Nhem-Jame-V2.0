@@ -136,8 +136,13 @@ MonoBehaviour:
   dashSpeed: 20
   dashDuration: 0.2
   dashCooldown: 0.5
+  dashingLayerIndex: 6
   speed: 6
-  moveActionReference: {fileID: 2436490216986929679, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  moveAction: {fileID: 2436490216986929679, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  aimAction: {fileID: -6720614696070557824, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  shootAction: {fileID: 834402610766513405, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  dashAction: {fileID: -8290279948879673063, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  interactAction: {fileID: -7412861957571453163, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   bullet: {fileID: 1868492166293041579, guid: b69ded08fb705884facc30528b7c2e6d, type: 3}
   timeBetweenFiring: 0.08
   spawnPoint: {fileID: 9188399294566738575}
