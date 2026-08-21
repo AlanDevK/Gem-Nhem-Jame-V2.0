@@ -12,6 +12,7 @@ TagManager:
   - Borders
   - EnemyBullets
   - Enemies
+  - Core
   layers:
   - Default
   - TransparentFX
@@ -19,10 +20,10 @@ TagManager:
   - Ground
   - Water
   - UI
-  - 
-  - 
-  - 
-  - 
+  - Dashing
+  - Walls
+  - Enemies
+  - EnemyBullets
   - 
   - 
   - 

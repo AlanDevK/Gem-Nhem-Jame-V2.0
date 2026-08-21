@@ -3,15 +3,17 @@ using UnityEngine;
 public class BulletMovement : MonoBehaviour
 {
     [SerializeField] float moveSpeed = 6f;
+    Rigidbody2D rb;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        rb = GetComponent<Rigidbody2D>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        transform.localPosition += transform.up * Time.deltaTime * moveSpeed;
+        rb.linearVelocity = transform.up * moveSpeed;
     }
 
     void OnTriggerEnter2D (Collider2D other){
@@ -25,8 +27,23 @@ public class BulletMovement : MonoBehaviour
             Destroy(gameObject);
         }
         if (other.CompareTag("EnemyBullets")){
-            Destroy(gameObject);
-            Destroy(other);
+            if (gameObject.CompareTag("Bullets")){
+                Destroy(gameObject);
+                Destroy(other.gameObject);
+            }
+        }
+        if (gameObject.CompareTag("EnemyBullets")){
+            PlayerMovement player = other.GetComponentInParent<PlayerMovement>();
+            if (player!=null){
+                if (other.CompareTag("Player") && !player.isShimmering && !player.isDashing){
+                    player.TakeDamage(10);
+                    Destroy(gameObject);
+                } else if (other.CompareTag("Core") && player.isShimmering){
+                    player.TakeDamage(20);
+                    Destroy(gameObject);
+                    Debug.Log("My core is hit! GAHH!!");
+                }
+            }
         }
     }
 }

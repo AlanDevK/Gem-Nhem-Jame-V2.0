@@ -2,32 +2,47 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Cinemachine;
 
 [RequireComponent(typeof(Rigidbody2D))]
 
 public class PlayerMovement : MonoBehaviour
 {
 
-    [Header("Dash")]
+    [Header("Dash & Phasing")]
     public float dashSpeed = 30f;
     public float dashDuration = 0.2f;
     public float dashCooldown = 1f;
+    public float dashDamage = 50f;
+    public float dashHitboxRadius = 1f;
+    [SerializeField] LayerMask unphasableLayers;
+    [SerializeField] LayerMask enemyLayer;
+    [SerializeField] int dashingLayerIndex = 8;
+    int originalLayerIndex;
     bool canDash = true;
-    bool isDashing = false;
+    public bool isDashing = false;
+    HashSet<IDamageable> damagedDuringDash = new HashSet<IDamageable>();
 
-    [Header("Movement")]
-    [SerializeField] float speed = 15f;
-    [SerializeField] InputActionReference moveActionReference;
+    [Header("Movement & Input")]
+    [SerializeField] float speed = 6f;
+    float originalSpeed;
+    [SerializeField] InputActionReference moveAction;
+    [SerializeField] InputActionReference aimAction;
+    [SerializeField] InputActionReference shootAction;
+    [SerializeField] InputActionReference dashAction;
+    [SerializeField] InputActionReference interactAction;
+    [SerializeField] InputActionReference slowMovementAction;
+
     Rigidbody2D rb;
     Vector2 moveInput;
-    Transform playerTransform;
-    Vector2 dir;
+    float targetAngle;
+    Camera mainCam;
 
     [Header("Shooting")]
     [SerializeField] GameObject bullet;
     [SerializeField] float timeBetweenFiring;
     [SerializeField] Transform spawnPoint;
-    float timer;
+    float fireTimer;
 
     [Header("Health")]
     int maxHealth = 100;
@@ -36,53 +51,155 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Interaction")]
     [SerializeField] GameObject interactionButton;
-    bool holdInteractable = false;
     [SerializeField] InteractionSlider interactionSlider;
+    bool holdInteractable = false;
     bool interactable = false;
+
+    [Header("Slow Movement")]
+    SpriteRenderer sprite;
+    [SerializeField] float fadeDuration;
+    [SerializeField] Color shimmerColor = Color.white;
+    public bool isShimmering;
+    [SerializeField] GameObject playerCore;
+    float fadeTimer = 0;
+    [SerializeField] float slowSpeed = 1f;
+    Color originalColor;
+    bool colorInit = false;
+
+    [Header("Screen Shake")]
+    [SerializeField] float recoilForce = 1.5f;
+    CinemachineImpulseSource impulseSource;
+
+    [Header("Hit Stop Effect")]
+    [SerializeField] float hitStopDuration = 0.05f;
+    bool isHitStopping = false;
+    [SerializeField] float hitRecoilForce = 1f;
 
     void Awake(){
         // Get Rigidbody2D component
         rb = GetComponent<Rigidbody2D>();
+        mainCam = Camera.main;
+        originalLayerIndex = gameObject.layer;
+        sprite = GetComponent<SpriteRenderer>();
+        impulseSource = GetComponent<CinemachineImpulseSource>();
     }
     
     void Start(){
-        playerTransform = this.transform;
-        timer = timeBetweenFiring;
+        fireTimer = timeBetweenFiring;
         currentHealth = maxHealth;
         healthBar.SetMaxHealth(maxHealth);
         interactionButton.SetActive(false);
         interactionSlider.gameObject.SetActive(false);
+        playerCore.SetActive(false);
+        originalSpeed = speed;
     }
 
     void Update(){
         if (isDashing) return;
-        dir = (Camera.main.ScreenToWorldPoint(Mouse.current.position.value) - playerTransform.position).normalized;
-        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        playerTransform.rotation = Quaternion.AngleAxis(angle - 90, Vector3.forward);
-        timer-=Time.deltaTime;
-        if (Mouse.current.leftButton.isPressed && timer<=0 && !isDashing){
-            OnClick();
-            timer = timeBetweenFiring;
+        moveInput = moveAction.action.ReadValue<Vector2>();
+        Vector2 mouseScreenPos = aimAction.action.ReadValue<Vector2>();
+        Vector3 mouseWorldPos = mainCam.ScreenToWorldPoint(mouseScreenPos);
+        Vector2 dir = ((Vector2)mouseWorldPos - (Vector2)transform.position).normalized;
+        targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
+        HandleShooting();
+        HandleDash();
+        HandleInteraction();
+        HandleSlowMovement();
+        if (currentHealth <= 0){
+            Time.timeScale = 1f;
+            Destroy(gameObject);
+            healthBar.gameObject.SetActive(false);
+            interactionButton.SetActive(false);
+            interactionSlider.gameObject.SetActive(false);
+            Debug.Log("GAH! I AM DEAD!");
         }
-        if (Keyboard.current.spaceKey.wasPressedThisFrame && canDash){
+    }
+
+    void FixedUpdate(){
+        if (isDashing) {
+            DetechDashHits();
+            return;
+        }
+        rb.linearVelocity = moveInput.normalized * speed;
+        rb.MoveRotation(targetAngle);
+    }
+
+    void DetechDashHits(){
+        Collider2D[] hits = Physics2D.OverlapCircleAll(rb.position, dashHitboxRadius, enemyLayer);
+        bool hitSomethingThisFrame = false;
+        foreach (Collider2D hit in hits){
+            if (hit.TryGetComponent(out IDamageable enemy)){
+                if (!damagedDuringDash.Contains(enemy)){
+                    Debug.Log("Enemy is hit by dashing!");
+                    enemy.TakeDamage(dashDamage);
+                    damagedDuringDash.Add(enemy);
+                    hitSomethingThisFrame = true;
+                }
+            }
+        }
+        if (hitSomethingThisFrame && !isHitStopping){
+            StartCoroutine(HitStopRoutine());
+            if (impulseSource != null){
+                impulseSource.GenerateImpulseWithVelocity(rb.linearVelocity.normalized * hitRecoilForce);
+            }
+        }
+    }
+    void HandleSlowMovement(){
+        if (!colorInit){
+            originalColor = sprite.color;
+            colorInit = true;
+        }
+        isShimmering = slowMovementAction.action.IsPressed();
+        if (isShimmering){
+            if (fadeTimer<fadeDuration){
+                fadeTimer+=Time.deltaTime;
+            }
+            float t = fadeTimer/fadeDuration;
+            sprite.color = Color.Lerp(originalColor, shimmerColor, t);
+            speed = slowSpeed;
+            playerCore.SetActive(true);
+            canDash = false;
+        } else{
+            fadeTimer = 0;
+            sprite.color = originalColor;
+            playerCore.SetActive(false);
+            speed = originalSpeed;
+            canDash = true;
+        }
+    }
+
+    void HandleShooting(){
+        fireTimer -= Time.deltaTime;
+        if (shootAction.action.IsPressed() && fireTimer <= 0){
+            Instantiate(bullet, spawnPoint.position, transform.rotation);
+            if (impulseSource != null){
+                impulseSource.GenerateImpulseWithVelocity(-transform.up * recoilForce);
+            }
+            fireTimer = timeBetweenFiring;
+        }
+    }
+
+    void HandleDash(){
+        if (dashAction.action.triggered && canDash){
             StartCoroutine(Dash());
         }
-        if (Keyboard.current.pKey.wasPressedThisFrame){
-            TakeDamage(20);
-        }
-        if (Keyboard.current.fKey.isPressed && holdInteractable && interactionSlider.timer<=interactionSlider.waitTimer){
+    }
+
+    void HandleInteraction(){
+        bool isHoldingInteract = interactAction.action.IsPressed();
+        if (isHoldingInteract && holdInteractable && interactionSlider.timer <= interactionSlider.waitTimer){
             interactionSlider.gameObject.SetActive(true);
             interactionSlider.timer += Time.deltaTime;
             interactionSlider.SetSliderValue();
-            if (interactionSlider.timer >= interactionSlider.waitTimer){
-                interactionSlider.timer = interactionSlider.waitTimer;
-                interactionSlider.gameObject.SetActive(false);
-                interactionButton.SetActive(false);
-                Debug.Log("Breaching Complete!");
-                holdInteractable = false;
-            }
         }
-        else if (interactionSlider.timer>0 && holdInteractable){
+        if (interactionSlider.timer >= interactionSlider.waitTimer){
+            interactionSlider.timer = interactionSlider.waitTimer;
+            interactionSlider.gameObject.SetActive(false);
+            interactionButton.SetActive(false);
+            Debug.Log("Breaching Complete!");
+            holdInteractable = false;
+        }
+        else if (interactionSlider.timer > 0 && holdInteractable){
             interactionSlider.timer -= Time.deltaTime;
             interactionSlider.SetSliderValue();
             if (interactionSlider.timer <= 0){
@@ -90,56 +207,37 @@ public class PlayerMovement : MonoBehaviour
                 interactionSlider.gameObject.SetActive(false);
             }
         }
-        if (Keyboard.current.fKey.wasPressedThisFrame && interactable){
+        if (interactAction.action.triggered && interactable){
             Debug.Log("Interacted!");
         }
     }
-
-    void FixedUpdate(){
-        if (isDashing) return;
-        //Using Rigidbody2D to change player's position
-        rb.MovePosition(rb.position + moveInput.normalized * speed * Time.fixedDeltaTime);
-    }
-
-    void OnEnable(){
-        //Enabling Input System
-        moveActionReference.action.Enable();
-        moveActionReference.action.performed += OnMovePerformed;
-        moveActionReference.action.canceled += OnMoveCanceled;
-    }
-
-    void OnDisable(){
-        // Disabling Input System
-        moveActionReference.action.performed -= OnMovePerformed;
-        moveActionReference.action.canceled -= OnMoveCanceled;
-        moveActionReference.action.Disable();
-    }
-
-    void OnMovePerformed(InputAction.CallbackContext ctx){
-        // Get Vector2 input
-        moveInput = ctx.ReadValue<Vector2>();
-    }
-
-    void OnMoveCanceled(InputAction.CallbackContext ctx){
-        // No movement when no button is pressed
-        moveInput = Vector2.zero;
-    }
-
-    void OnClick(){
-        Instantiate(bullet, spawnPoint.position, transform.rotation);
-    }
-
     private IEnumerator Dash(){
+        damagedDuringDash.Clear();
         canDash = false;
         isDashing = true;
-        rb.linearVelocity = transform.up * dashSpeed;
+        gameObject.layer = dashingLayerIndex;
+        Vector2 mouseScreenPos = aimAction.action.ReadValue<Vector2>();
+        Vector3 mouseWorldPos = mainCam.ScreenToWorldPoint(mouseScreenPos);
+        Vector2 dashDir = ((Vector2)mouseWorldPos - (Vector2)transform.position).normalized;
+        rb.linearVelocity = dashDir * dashSpeed;
         yield return new WaitForSeconds(dashDuration);
+        rb.linearVelocity = Vector2.zero;
+        gameObject.layer = originalLayerIndex;
         isDashing = false;
         yield return new WaitForSeconds(dashCooldown);
         canDash = true;
     }
 
-    void TakeDamage(int damage){
+    IEnumerator HitStopRoutine(){
+        isHitStopping = true;
+        Time.timeScale = 0;
+        yield return new WaitForSecondsRealtime(hitStopDuration);
+        Time.timeScale = 1f;
+        isHitStopping = false;
+    }
+
+    public void TakeDamage(int damage){
+        Debug.Log("Taking damages! AH!");
         currentHealth -= damage;
         healthBar.SetHealth(currentHealth);
     }
@@ -157,9 +255,7 @@ public class PlayerMovement : MonoBehaviour
 
     void OnTriggerExit2D (Collider2D other){
         if (other.CompareTag("DataCenter")){
-            if (interactionButton != null){
-                interactionButton.SetActive(false);
-            }
+            if (interactionButton != null) interactionButton.SetActive(false);
             holdInteractable = false;
             if (interactionSlider.timer < interactionSlider.waitTimer){
                 interactionSlider.timer = 0;
@@ -170,5 +266,22 @@ public class PlayerMovement : MonoBehaviour
             interactionButton.SetActive(false);
             interactable = false;
         }
+    }
+    void OnEnable(){
+        moveAction.action.Enable();
+        aimAction.action.Enable();
+        shootAction.action.Enable();
+        dashAction.action.Enable();
+        interactAction.action.Enable();
+        slowMovementAction.action.Enable();
+    }
+
+    void OnDisable(){
+        moveAction.action.Disable();
+        aimAction.action.Disable();
+        shootAction.action.Disable();
+        dashAction.action.Disable();
+        interactAction.action.Disable();
+        slowMovementAction.action.Disable();
     }
 }

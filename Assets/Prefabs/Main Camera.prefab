@@ -504,7 +504,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d25ea04a7bba834280fc233b51f5a29, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraScript
-  player: {fileID: 0}
+  player: {fileID: 5356115358063983483, guid: 081a714c63b1eb04dbbeccb4a5533032, type: 3}
 --- !u!1 &6402940766207045827
 GameObject:
   m_ObjectHideFlags: 0
