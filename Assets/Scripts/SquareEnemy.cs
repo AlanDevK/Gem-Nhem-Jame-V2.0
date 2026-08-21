@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(NavMeshAgent))]
-public class SquareEnemy : MonoBehaviour
+public class SquareEnemy : MonoBehaviour, IDamageable
 {
     [Header("References")]
     [SerializeField] Transform player;
@@ -77,6 +77,7 @@ public class SquareEnemy : MonoBehaviour
     }
 
     void OnTriggerEnter2D (Collider2D other){
+        PlayerMovement player = other.GetComponentInParent<PlayerMovement>();
         if (other.gameObject.CompareTag("Bullets")){
             TakeDamage(10);
         }

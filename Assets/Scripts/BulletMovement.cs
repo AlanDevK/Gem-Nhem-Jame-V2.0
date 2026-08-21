@@ -35,7 +35,7 @@ public class BulletMovement : MonoBehaviour
         if (gameObject.CompareTag("EnemyBullets")){
             PlayerMovement player = other.GetComponentInParent<PlayerMovement>();
             if (player!=null){
-                if (other.CompareTag("Player") && !player.isShimmering){
+                if (other.CompareTag("Player") && !player.isShimmering && !player.isDashing){
                     player.TakeDamage(10);
                     Destroy(gameObject);
                 } else if (other.CompareTag("Core") && player.isShimmering){

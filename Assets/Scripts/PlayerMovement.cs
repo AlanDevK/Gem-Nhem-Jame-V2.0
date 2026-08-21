@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Cinemachine;
 
 [RequireComponent(typeof(Rigidbody2D))]
 
@@ -12,10 +13,15 @@ public class PlayerMovement : MonoBehaviour
     public float dashSpeed = 30f;
     public float dashDuration = 0.2f;
     public float dashCooldown = 1f;
+    public float dashDamage = 50f;
+    public float dashHitboxRadius = 1f;
+    [SerializeField] LayerMask unphasableLayers;
+    [SerializeField] LayerMask enemyLayer;
     [SerializeField] int dashingLayerIndex = 8;
     int originalLayerIndex;
     bool canDash = true;
-    bool isDashing = false;
+    public bool isDashing = false;
+    HashSet<IDamageable> damagedDuringDash = new HashSet<IDamageable>();
 
     [Header("Movement & Input")]
     [SerializeField] float speed = 6f;
@@ -29,9 +35,8 @@ public class PlayerMovement : MonoBehaviour
 
     Rigidbody2D rb;
     Vector2 moveInput;
+    float targetAngle;
     Camera mainCam;
-    // Transform playerTransform;
-    // Vector2 dir;
 
     [Header("Shooting")]
     [SerializeField] GameObject bullet;
@@ -61,7 +66,14 @@ public class PlayerMovement : MonoBehaviour
     Color originalColor;
     bool colorInit = false;
 
+    [Header("Screen Shake")]
+    [SerializeField] float recoilForce = 1.5f;
+    CinemachineImpulseSource impulseSource;
 
+    [Header("Hit Stop Effect")]
+    [SerializeField] float hitStopDuration = 0.05f;
+    bool isHitStopping = false;
+    [SerializeField] float hitRecoilForce = 1f;
 
     void Awake(){
         // Get Rigidbody2D component
@@ -69,6 +81,7 @@ public class PlayerMovement : MonoBehaviour
         mainCam = Camera.main;
         originalLayerIndex = gameObject.layer;
         sprite = GetComponent<SpriteRenderer>();
+        impulseSource = GetComponent<CinemachineImpulseSource>();
     }
     
     void Start(){
@@ -83,13 +96,17 @@ public class PlayerMovement : MonoBehaviour
 
     void Update(){
         if (isDashing) return;
-
-        HandleRotation();
+        moveInput = moveAction.action.ReadValue<Vector2>();
+        Vector2 mouseScreenPos = aimAction.action.ReadValue<Vector2>();
+        Vector3 mouseWorldPos = mainCam.ScreenToWorldPoint(mouseScreenPos);
+        Vector2 dir = ((Vector2)mouseWorldPos - (Vector2)transform.position).normalized;
+        targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
         HandleShooting();
         HandleDash();
         HandleInteraction();
         HandleSlowMovement();
         if (currentHealth <= 0){
+            Time.timeScale = 1f;
             Destroy(gameObject);
             healthBar.gameObject.SetActive(false);
             interactionButton.SetActive(false);
@@ -99,12 +116,34 @@ public class PlayerMovement : MonoBehaviour
     }
 
     void FixedUpdate(){
-        if (isDashing) return;
-        //Using Rigidbody2D to change player's position
-        moveInput = moveAction.action.ReadValue<Vector2>();
-        rb.MovePosition(rb.position + moveInput.normalized * speed * Time.fixedDeltaTime);
+        if (isDashing) {
+            DetechDashHits();
+            return;
+        }
+        rb.linearVelocity = moveInput.normalized * speed;
+        rb.MoveRotation(targetAngle);
     }
 
+    void DetechDashHits(){
+        Collider2D[] hits = Physics2D.OverlapCircleAll(rb.position, dashHitboxRadius, enemyLayer);
+        bool hitSomethingThisFrame = false;
+        foreach (Collider2D hit in hits){
+            if (hit.TryGetComponent(out IDamageable enemy)){
+                if (!damagedDuringDash.Contains(enemy)){
+                    Debug.Log("Enemy is hit by dashing!");
+                    enemy.TakeDamage(dashDamage);
+                    damagedDuringDash.Add(enemy);
+                    hitSomethingThisFrame = true;
+                }
+            }
+        }
+        if (hitSomethingThisFrame && !isHitStopping){
+            StartCoroutine(HitStopRoutine());
+            if (impulseSource != null){
+                impulseSource.GenerateImpulseWithVelocity(rb.linearVelocity.normalized * hitRecoilForce);
+            }
+        }
+    }
     void HandleSlowMovement(){
         if (!colorInit){
             originalColor = sprite.color;
@@ -129,18 +168,13 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    void HandleRotation(){
-        Vector2 mouseScreenPos = aimAction.action.ReadValue<Vector2>();
-        Vector3 mouseWorldPos = mainCam.ScreenToWorldPoint(mouseScreenPos);
-        Vector2 dir = ((Vector2)mouseWorldPos - (Vector2)transform.position).normalized;
-        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        transform.rotation = Quaternion.AngleAxis(angle - 90, Vector3.forward);
-    }
-
     void HandleShooting(){
         fireTimer -= Time.deltaTime;
         if (shootAction.action.IsPressed() && fireTimer <= 0){
             Instantiate(bullet, spawnPoint.position, transform.rotation);
+            if (impulseSource != null){
+                impulseSource.GenerateImpulseWithVelocity(-transform.up * recoilForce);
+            }
             fireTimer = timeBetweenFiring;
         }
     }
@@ -178,16 +212,28 @@ public class PlayerMovement : MonoBehaviour
         }
     }
     private IEnumerator Dash(){
+        damagedDuringDash.Clear();
         canDash = false;
         isDashing = true;
         gameObject.layer = dashingLayerIndex;
-        rb.linearVelocity = transform.up * dashSpeed;
+        Vector2 mouseScreenPos = aimAction.action.ReadValue<Vector2>();
+        Vector3 mouseWorldPos = mainCam.ScreenToWorldPoint(mouseScreenPos);
+        Vector2 dashDir = ((Vector2)mouseWorldPos - (Vector2)transform.position).normalized;
+        rb.linearVelocity = dashDir * dashSpeed;
         yield return new WaitForSeconds(dashDuration);
         rb.linearVelocity = Vector2.zero;
         gameObject.layer = originalLayerIndex;
         isDashing = false;
         yield return new WaitForSeconds(dashCooldown);
         canDash = true;
+    }
+
+    IEnumerator HitStopRoutine(){
+        isHitStopping = true;
+        Time.timeScale = 0;
+        yield return new WaitForSecondsRealtime(hitStopDuration);
+        Time.timeScale = 1f;
+        isHitStopping = false;
     }
 
     public void TakeDamage(int damage){
