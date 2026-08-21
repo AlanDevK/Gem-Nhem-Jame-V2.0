@@ -27,8 +27,23 @@ public class BulletMovement : MonoBehaviour
             Destroy(gameObject);
         }
         if (other.CompareTag("EnemyBullets")){
-            Destroy(gameObject);
-            Destroy(other.gameObject);
+            if (gameObject.CompareTag("Bullets")){
+                Destroy(gameObject);
+                Destroy(other.gameObject);
+            }
+        }
+        if (gameObject.CompareTag("EnemyBullets")){
+            PlayerMovement player = other.GetComponentInParent<PlayerMovement>();
+            if (player!=null){
+                if (other.CompareTag("Player") && !player.isShimmering){
+                    player.TakeDamage(10);
+                    Destroy(gameObject);
+                } else if (other.CompareTag("Core") && player.isShimmering){
+                    player.TakeDamage(20);
+                    Destroy(gameObject);
+                    Debug.Log("My core is hit! GAHH!!");
+                }
+            }
         }
     }
 }

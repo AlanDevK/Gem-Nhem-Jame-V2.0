@@ -12,6 +12,7 @@ TagManager:
   - Borders
   - EnemyBullets
   - Enemies
+  - Core
   layers:
   - Default
   - TransparentFX
