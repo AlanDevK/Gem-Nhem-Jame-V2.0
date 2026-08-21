@@ -15,6 +15,7 @@ TagManager:
   - Core
   - PushableEnemy
   - Explosive
+  - Bullet
   layers:
   - Default
   - TransparentFX

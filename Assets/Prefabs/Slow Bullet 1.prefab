@@ -107,7 +107,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BulletMovement
   moveSpeed: 10
-  player: {fileID: 0}
+  knockbackForce: 15
 --- !u!50 &7106233279787300048
 Rigidbody2D:
   serializedVersion: 5
