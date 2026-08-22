@@ -294,7 +294,7 @@ if (interactAction.action.triggered && interactable){
         // Lấy hướng chuột để lướt tới
         Vector2 mouseScreenPos = aimAction.action.ReadValue<Vector2>();
         Vector3 mouseWorldPos = mainCam.ScreenToWorldPoint(mouseScreenPos);
-        Vector2 dashDir = ((Vector2)mouseWorldPos - (Vector2)transform.position).normalized;
+        // Vector2 dashDir = ((Vector2)mouseWorldPos - (Vector2)transform.position).normalized;
 
         float startTime = Time.unscaledTime;
         
