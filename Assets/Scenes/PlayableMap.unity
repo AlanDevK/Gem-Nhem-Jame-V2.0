@@ -721,7 +721,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -1497,7 +1497,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -1587,7 +1587,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -2023,7 +2023,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -2113,7 +2113,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -2433,7 +2433,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -4358,7 +4358,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -6214,7 +6214,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -7031,7 +7031,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -8555,7 +8555,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -11955,7 +11955,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -12148,7 +12148,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -12685,7 +12685,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -14451,7 +14451,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -15787,7 +15787,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -18335,7 +18335,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -23242,7 +23242,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -23908,7 +23908,7 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 3
+  m_LinearDamping: 0.5
   m_AngularDamping: 0.05
   m_GravityScale: 0.05
   m_Material: {fileID: 0}
@@ -24011,6 +24011,8 @@ SceneRoots:
   - {fileID: 1452006819}
   - {fileID: 977230447}
   - {fileID: 1874210827}
+  - {fileID: 1390980368}
+  - {fileID: 1393334899}
   - {fileID: 1422330197}
   - {fileID: 593240675}
   - {fileID: 972204594}
