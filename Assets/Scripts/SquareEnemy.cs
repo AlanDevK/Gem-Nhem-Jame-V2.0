@@ -78,13 +78,18 @@ public class SquareEnemy : MonoBehaviour, IDamageable
 
     void OnTriggerEnter2D (Collider2D other){
         PlayerMovement player = other.GetComponentInParent<PlayerMovement>();
-        if (other.gameObject.CompareTag("Bullets")){
+        if (other.gameObject.CompareTag("Bullet")){
             TakeDamage(10);
+        }
+        if (other.gameObject.CompareTag("Player"))
+        {
+            player.TakeDamage(10, transform);
         }
     }
 
     public void TakeDamage(float amount){
         health -= amount;
+        Debug.Log($"GAH! I'm hit. I only have {health} left!");
         if (health <= 0){
             gameObject.SetActive(false);
         }
