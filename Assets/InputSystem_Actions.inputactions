@@ -59,6 +59,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Abilities",
+                    "type": "Button",
+                    "id": "fc4edc17-b088-4deb-822b-0f317576300c",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -169,6 +178,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "Slow Movement",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "98cceec6-a481-44af-99cf-5861d21b9fd5",
+                    "path": "<Keyboard>/1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Abilities",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "dc8e423d-bf3f-404c-bdcc-800b17964739",
+                    "path": "<Keyboard>/2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Abilities",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
