@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Cinemachine;
+using UnityEngine.Rendering;
 
 [RequireComponent(typeof(Rigidbody2D))]
 
@@ -205,7 +206,18 @@ void FixedUpdate(){
 
     void HandleDash(){
         if (dashAction.action.triggered && canDash){
-            StartCoroutine(Dash());
+            Vector2 mouseScreenPos = aimAction.action.ReadValue<Vector2>();
+            Vector3 mouseWorldPos = mainCam.ScreenToWorldPoint(mouseScreenPos);
+            Vector2 dashDir = ((Vector2)mouseWorldPos - (Vector2)transform.position).normalized;
+            float expectedDashDistance = dashSpeed * dashDuration;
+            float actualDashDuration = dashDuration;
+            RaycastHit2D hit = Physics2D.CircleCast(transform.position, 0.5f, dashDir, expectedDashDistance, unphasableLayers);
+            if (hit.collider != null){
+                float safeDistance = Mathf.Max(0, hit.distance - 0.1f);
+                actualDashDuration = safeDistance / dashSpeed;
+                if (actualDashDuration <= 0) return;
+            }
+            StartCoroutine(Dash(dashDir, actualDashDuration));
         }
     }
 
@@ -272,7 +284,7 @@ if (interactAction.action.triggered && interactable){
         Instantiate(bullet, spawnPoint.position, transform.rotation);
     }
 
-    private IEnumerator Dash()
+    private IEnumerator Dash(Vector2 dashDir, float actualDuration)
     {
         damagedDuringDash.Clear();
         canDash = false;
@@ -286,7 +298,7 @@ if (interactAction.action.triggered && interactable){
 
         float startTime = Time.unscaledTime;
         
-        while (Time.unscaledTime < startTime + dashDuration)
+        while (Time.unscaledTime < startTime + actualDuration)
         {
             if (Time.timeScale < 1f)
             {
@@ -303,6 +315,9 @@ if (interactAction.action.triggered && interactable){
         rb.linearVelocity = Vector2.zero;
         gameObject.layer = originalLayerIndex; 
         isDashing = false;
+
+        yield return new WaitForSeconds(dashCooldown);
+        canDash = true;
     }
 IEnumerator HitStopRoutine(){
         isHitStopping = true;
