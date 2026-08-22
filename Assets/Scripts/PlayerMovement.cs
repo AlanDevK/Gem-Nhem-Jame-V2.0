@@ -24,7 +24,7 @@ public class PlayerMovement : MonoBehaviour
     HashSet<IDamageable> damagedDuringDash = new HashSet<IDamageable>();
 
     [Header("Movement & Input")]
-    [SerializeField] float speed = 22f; // Giữ nguyên tốc độ 22f của bạn
+    [SerializeField] float speed = 22f;
     float originalSpeed;
     [SerializeField] InputActionReference moveAction;
     [SerializeField] InputActionReference aimAction;
@@ -76,7 +76,6 @@ public class PlayerMovement : MonoBehaviour
     public float hitRecoilForce = 0.3f;
 
     void Awake(){
-        // Get Rigidbody2D component
         rb = GetComponent<Rigidbody2D>();
         mainCam = Camera.main;
         originalLayerIndex = gameObject.layer;
@@ -98,22 +97,18 @@ public class PlayerMovement : MonoBehaviour
     {
         if (isDashing) return;
 
-        // 1. Nhận Input
         moveInput = moveAction.action.ReadValue<Vector2>();
         Vector2 mouseScreenPos = aimAction.action.ReadValue<Vector2>();
         Vector3 mouseWorldPos = mainCam.ScreenToWorldPoint(mouseScreenPos);
         
-        // 2. Tính hướng xoay
         Vector2 dir = ((Vector2)mouseWorldPos - (Vector2)transform.position).normalized;
         targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
 
-        // 3. Xử lý kĩ năng
         HandleShooting();
         HandleDash();
         HandleInteraction();
         HandleSlowMovement();
 
-        // 4. Xử lý va chạm nổ khi slow-mo (từ code cũ mang sang)
         if (Time.timeScale < 1f) {
             Collider2D[] hitColliders = Physics2D.OverlapCircleAll(transform.position, 0.2f);
             foreach (Collider2D hit in hitColliders) {
@@ -124,7 +119,6 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        // 5. Xử lý khi chết
         if (currentHealth <= 0)
         {
             Time.timeScale = 1f;
@@ -141,23 +135,16 @@ void FixedUpdate(){
             DetechDashHits();
             return;
         }
-
-        // --- BỔ SUNG ĐOẠN NÀY ĐỂ DI CHUYỂN TRONG TIMESTOP ---
         if (Time.timeScale < 1f)
         {
-            // Xóa sạch quán tính vật lý để tránh bị trượt
             rb.linearVelocity = Vector2.zero;
             
-            // Tự dịch chuyển thủ công bằng thời gian thực ngoài đời (UnscaledDeltaTime)
             transform.position += (Vector3)(moveInput.normalized * speed * Time.unscaledDeltaTime);
         }
         else
         {
-            // Khi thời gian bình thường, sử dụng hệ thống vật lý Rigidbody cũ
             rb.linearVelocity = moveInput.normalized * speed;
         }
-        // ----------------------------------------------------
-
         rb.MoveRotation(targetAngle);
     }
 
@@ -247,10 +234,9 @@ void FixedUpdate(){
 if (interactAction.action.triggered && interactable){
             Debug.Log("Interacted!");
         }
-    } // Đóng ngoặc kết thúc hàm HandleInteraction()
+    } 
 
     void OnEnable(){
-        // Bật toàn bộ Input System
         moveAction.action.Enable();
         aimAction.action.Enable();
         shootAction.action.Enable();
@@ -258,13 +244,11 @@ if (interactAction.action.triggered && interactable){
         interactAction.action.Enable();
         slowMovementAction.action.Enable();
 
-        // Đăng ký sự kiện di chuyển
         moveAction.action.performed += OnMovePerformed;
         moveAction.action.canceled += OnMoveCanceled;
         }
 
     void OnDisable(){
-        // Tắt toàn bộ Input System
         moveAction.action.Disable();
         aimAction.action.Disable();
         shootAction.action.Disable();
@@ -272,7 +256,6 @@ if (interactAction.action.triggered && interactable){
         interactAction.action.Disable();
         slowMovementAction.action.Disable();
 
-        // Hủy đăng ký sự kiện di chuyển
         moveAction.action.performed -= OnMovePerformed;
         moveAction.action.canceled -= OnMoveCanceled;
         }
@@ -282,11 +265,10 @@ if (interactAction.action.triggered && interactable){
         }
 
     void OnMoveCanceled(InputAction.CallbackContext ctx){
-        // No movement when no button is pressed
             moveInput = Vector2.zero;
     }
 
-    void OnClick(){
+    public void OnClick(){
         Instantiate(bullet, spawnPoint.position, transform.rotation);
     }
 
@@ -295,7 +277,7 @@ if (interactAction.action.triggered && interactable){
         damagedDuringDash.Clear();
         canDash = false;
         isDashing = true;
-        gameObject.layer = dashingLayerIndex; // Chuyển layer để xuyên tường
+        gameObject.layer = dashingLayerIndex; 
 
         // Lấy hướng chuột để lướt tới
         Vector2 mouseScreenPos = aimAction.action.ReadValue<Vector2>();
@@ -319,7 +301,7 @@ if (interactAction.action.triggered && interactable){
         }
 
         rb.linearVelocity = Vector2.zero;
-        gameObject.layer = originalLayerIndex; // Trả lại layer cũ
+        gameObject.layer = originalLayerIndex; 
         isDashing = false;
     }
 IEnumerator HitStopRoutine(){
